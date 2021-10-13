@@ -20,8 +20,6 @@ sub main {
 sub quotes_of {
     my ($document) = @_;
     my $elements = $document->find( \&wanted );
-    use Data::Dumper;
-    print Dumper $elements;
     unless ( defined $elements ) {
         warn "findがエラーを返しました @{[$document->{filename}]}";
     }
@@ -40,24 +38,27 @@ sub wanted {
 sub print_elements {
     my ( $filename, $elements ) = @_;
     foreach my $element (@$elements) {
-        if ( $element->isa('PPI::Token::HereDoc') ) {
-            print_heredoc( $filename, $element );
-        } else {
-            print_element( $filename, $element );
-        }
+        print_element( $filename, $element );
     }
-}
-
-sub print_heredoc {
-    my ( $filename, $element ) = @_;
-    print
-"$filename:@{[$element->{_location}->[0]]}:@{[oneline(join '', @{$element->{_heredoc}})]}\n";
 }
 
 sub print_element {
     my ( $filename, $element ) = @_;
-    print
-"$filename:@{[$element->{_location}->[0]]}:@{[oneline($element->{content})]}\n";
+    print "$filename:@{[line_number_of($element)]}:@{[content_of($element)]}\n";
+}
+
+sub line_number_of {
+    my ($element) = @_;
+    $element->{_location}->[0];
+}
+
+sub content_of {
+    my ($element) = @_;
+    if ( $element->isa('PPI::Token::HereDoc') ) {
+        return oneline( join '', @{ $element->{_heredoc} } );
+    } else {
+        return oneline( $element->{content} );
+    }
 }
 
 sub oneline {
