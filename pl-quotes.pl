@@ -10,7 +10,11 @@ main() unless caller;
 
 sub main {
     foreach my $filename (@ARGV) {
-        my $document = PPI::Document->new($filename);
+        my $document = eval { PPI::Document->new( $filename, readonly => 1 ) };
+        unless ($document) {
+            warn "parsing failed ($filename):" . PPI::Document->errstr;
+            next;
+        }
         $document->index_locations;
         my $elements = quotes_of($document);
         print_elements( $filename, $elements );
@@ -21,7 +25,7 @@ sub quotes_of {
     my ($document) = @_;
     my $elements = $document->find( \&wanted );
     unless ( defined $elements ) {
-        warn "findがエラーを返しました @{[$document->{filename}]}";
+        warn "find failed (@{[$document->{filename}]})";
     }
     unless ($elements) {
         return [];
